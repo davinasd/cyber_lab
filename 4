@@ -1,0 +1,113 @@
+4.) Lab Title: Securing Web Applications and Detecting Vulnerabilities
+
+Objective
+To understand and mitigate basic vulnerabilities in web applications using a LAMP (Linux, Apache,
+MySQL, PHP) stack on Ubuntu, with practical testing using Kali Linux.
+
+Requirements
+- VirtualBox or VMware
+- Ubuntu VM for setting up the LAMP stack
+- Kali Linux VM for vulnerability testing
+- Windows VM (optional, for cross-platform testing)
+- Basic knowledge of Linux commands and web server configurations
+
+Part 1: Setting Up a Web Server
+1. Update the Ubuntu Server
+- Open the terminal on Ubuntu and run:
+sudo apt update && sudo apt upgrade -y
+
+2. Install Apache
+- Install Apache web server:
+sudo apt install apache2 -y
+- Start and enable Apache on boot:
+sudo systemctl start apache2
+sudo systemctl enable apache2
+
+3. Verify Apache Installation
+- Open a browser within Ubuntu or from Kali using the IP address:
+http://<Ubuntu-VM-IP-address>
+
+- You should see the Apache default welcome page.
+
+4. Install MySQL and PHP
+- Install MySQL:
+sudo apt install mysql-server -y
+- Install PHP and modules:
+sudo apt install php libapache2-mod-php php-mysql -y
+
+5. Create a Basic Web Application
+- Create a PHP test file:
+sudo nano /var/www/html/test.php
+- Add sample content:
+<?php
+phpinfo();
+?>
+- Access the page to confirm PHP is working:
+http://<Ubuntu-VM-IP-address>/test.php
+
+Part 2: Detecting and Understanding Vulnerabilities
+Vulnerability 1: SQL Injection (SQLi)
+1. Setup a Sample Database
+- Access MySQL:
+sudo mysql -u root -p
+- Create a sample database and table:
+CREATE DATABASE testdb;
+USE testdb;
+CREATE TABLE users (id INT AUTO_INCREMENT, username VARCHAR(50), password
+
+VARCHAR(50), PRIMARY KEY(id));
+INSERT INTO users (username, password) VALUES ('admin', 'admin123');
+
+2. Create a Vulnerable PHP Script
+- Create login.php in /var/www/html/:
+<?php
+$conn = new mysqli("localhost", "root", "", "testdb");
+$username = $_GET['username'];
+$password = $_GET['password'];
+
+$query = "SELECT * FROM users WHERE username='$username' AND
+
+password='$password'";
+$result = $conn->query($query);
+if ($result->num_rows > 0) {
+echo "Login successful!";
+} else {
+echo "Invalid credentials!";
+}
+?>
+
+3. Testing SQLi from Kali Linux
+- Open a browser on Kali and use the following URL to inject:
+http://<Ubuntu-VM-IP-address>/login.php?username=admin'--&password=
+- If vulnerable, it will bypass authentication.
+Vulnerability 2: Cross-Site Scripting (XSS)
+1. Create a Simple HTML Form
+- Add comment.php:
+<?php
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+echo "Comment: " . $_POST["comment"];
+}
+?>
+<form method="post">
+<input type="text" name="comment">
+<input type="submit" value="Submit">
+</form>
+
+2. Testing XSS from Kali
+- Enter <script>alert('XSS');</script> in the form. If an alert appears, the application is vulnerable.
+
+Part 3: Mitigation Techniques
+1. Prevent SQLi
+- Use prepared statements:
+$stmt = $conn->prepare("SELECT * FROM users WHERE username=? AND password=?");
+$stmt->bind_param("ss", $username, $password);
+
+2. Sanitize Input for XSS
+- Use htmlspecialchars() to escape HTML entities:
+echo htmlspecialchars($_POST["comment"]);
+
+Conclusion
+Through this lab, participants gain hands-on experience with common vulnerabilities in web
+applications and understand the importance of secure coding practices. The lab can be used as a
+foundation for building secure applications and awareness of security flaws.
