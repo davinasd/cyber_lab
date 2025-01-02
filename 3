@@ -1,0 +1,53 @@
+3.) Lab Title: Exploring Cloud & Web Application Vulnerabilities
+Using an Apache Web Server
+
+Objective
+To understand basic concepts of web serversetup, deployment, and common vulnerabilitieslike
+Directory Traversal
+Requirements
+- VMware or VirtualBox for virtualization
+- Kali Linux VM fortesting and exploitation
+- Ubuntu Server VM to host the Apache web server and web application
+- Basic understanding of Linux commands
+Step-by-Step Guide
+
+Part 1: Setting up the Apache Web Server on Ubuntu
+1. Update the Ubuntu Server
+- Open the terminal on your Ubuntu VM and update the package list:
+sudo apt update
+2. Install Apache
+- Install the Apache web server:
+sudo apt install apache2 -y
+- Start and enable Apache to ensure it runs atstartup:
+sudo systemctl start apache2
+sudo systemctl enable apache2
+
+3. Verify Apache Installation
+- Open a web browser and type your Ubuntu VM'sIP address:
+```http://<your-VM-IP-address>```
+- You should see the Apache2 default welcome page, confirming that the server isrunning.
+
+4. Create a Simple Web Application
+- Create a basic HTML file to simulate a web application.
+sudo nano /var/www/html/index.html
+- Add the following HTML content:
+<html>
+<body>
+<h1>Welcome to the Vulnerability Lab!</h1>
+<p>Thisis a simple Apache web serversetup fortesting vulnerabilities.</p>
+</body>
+</html>
+- Save and close the file.
+
+5. Test the Web Application
+- Reload your browser at`http://<your-VM-IP-address>`to see the HTML page you just created.
+
+Part 2: Experimenting with Common Vulnerabilities
+
+Vulnerability 1: Directory Traversal
+- In Apache, by default, accessing files outside the web directory (`/var/www/html`) is restricted.
+However, some misconfigurations may allow this.
+- Try accessing `/etc/passwd` by adding `../` paths:
+```http://<your-VM-IP-address>/../../etc/passwd```
+- Thisshould fail if Apache is correctly configured. Ifsuccessful, it would display the contents of
+`/etc/passwd`, a sensitive file.
